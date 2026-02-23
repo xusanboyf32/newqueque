@@ -1,0 +1,415 @@
+╔═══════════════════════════════════════════════════════════════╗
+║  RETSEPT TIZIMI - O'RNATISH VA ISHLATISH QO'LLANMASI        ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📂 FAYLLARNI JOYLASH:
+====================
+
+backend/apps/prescriptions/
+├── __init__.py
+├── models.py       ← prescriptions_models.py
+├── serializers.py  ← prescriptions_serializers.py
+├── utils.py        ← prescriptions_utils.py
+├── views.py        ← prescriptions_other_files.py (1-qism)
+├── urls.py         ← prescriptions_other_files.py (2-qism)
+├── admin.py        ← prescriptions_other_files.py (3-qism)
+├── apps.py         ← prescriptions_other_files.py (4-qism)
+├── services.py     ← prescriptions_other_files.py (5-qism)
+└── selectors.py    ← prescriptions_other_files.py (6-qism)
+
+
+🔧 1. SETTINGS.PY:
+==================
+
+INSTALLED_APPS = [
+    # ...
+    'apps.accounts',
+    'apps.departments',
+    'apps.appointments',
+    'apps.prescriptions',  # ← QO'SHING
+    'apps.ai_assistant',
+]
+
+
+🔗 2. URLS.PY:
+==============
+
+# config/urls.py
+urlpatterns = [
+    # ...
+    path('api/prescriptions/', include('apps.prescriptions.urls')),  # ← QO'SHING
+]
+
+
+📦 3. KUTUBXONALAR:
+===================
+
+pip install python-barcode==0.15.1
+pip install qrcode==7.4.2
+pip install Pillow==10.2.0
+pip install reportlab==4.0.9
+
+
+🗄️ 4. MIGRATSIYA:
+==================
+
+python manage.py makemigrations
+python manage.py migrate
+
+
+💊 5. DORILAR BAZASINI TO'LDIRISH:
+==================================
+
+Admin panelda "Retseptlar" > "Dorilar bazasi" > "Yangi qo'shish"
+
+MISOLLAR:
+
+Dori 1:
+  Nomi: Paracetamol
+  Umumiy nomi: Acetaminophen
+  Kategoriya: Og'riq qoldiruvchi
+  Shakli: Tabletka
+  Kuchi: 500mg
+  Ishlab chiqaruvchi: Darmon Pharm
+  Ta'rif: Og'riqni qoldiradi va isitmani tushiradi
+  Foydalanish: Ovqatdan keyin, ko'p suv bilan
+  Ogohlantirishlar: Jigar kasalligi bo'lsa ehtiyot bo'ling
+  Yon ta'sirlar: Oshqozon og'rig'i, allergiya
+  Narx: 5000
+  Retsept kerakmi: Yo'q
+  Mavjud: ✓
+
+Dori 2:
+  Nomi: Amoxicillin
+  Kategoriya: Antibiotik
+  Shakli: Kapsula
+  Kuchi: 500mg
+  Narx: 25000
+  Retsept kerakmi: Ha  ← MUHIM!
+  Mavjud: ✓
+
+Dori 3:
+  Nomi: Analgin
+  Kategoriya: Og'riq qoldiruvchi
+  Shakli: Tabletka
+  Kuchi: 500mg
+  Narx: 3000
+  Retsept kerakmi: Yo'q
+
+Dori 4:
+  Nomi: Vitamin C
+  Kategoriya: Vitamin
+  Shakli: Tabletka
+  Kuchi: 1000mg
+  Narx: 15000
+  Retsept kerakmi: Yo'q
+
+Dori 5:
+  Nomi: Aspirin
+  Kategoriya: Og'riq qoldiruvchi
+  Shakli: Tabletka
+  Kuchi: 100mg
+  Narx: 8000
+  Retsept kerakmi: Yo'q
+
+... kamida 20-30 ta dori qo'shing!
+
+
+🧪 6. TEST QILISH:
+==================
+
+A) DORILAR RO'YXATI:
+
+GET http://127.0.0.1:8000/api/prescriptions/medications/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+
+Response:
+[
+  {
+    "id": 1,
+    "name": "Paracetamol",
+    "generic_name": "Acetaminophen",
+    "category": "PAINKILLER",
+    "category_display": "Og'riq qoldiruvchi",
+    "form": "TABLET",
+    "form_display": "Tabletka",
+    "strength": "500mg",
+    "price": "5000.00",
+    "requires_prescription": false
+  }
+]
+
+
+B) RETSEPT YARATISH (Faqat doktor):
+
+POST http://127.0.0.1:8000/api/prescriptions/create/
+Headers:
+  Authorization: Bearer DOCTOR_TOKEN
+Body (JSON):
+{
+  "patient": 2,
+  "diagnosis": "Bronxit",
+  "notes": "3 kun ichida ko'rish kerak",
+  "items": [
+    {
+      "medication": 1,
+      "dosage": "1 tabletka",
+      "frequency": "Kuniga 3 marta",
+      "duration": "5 kun",
+      "quantity": 15,
+      "instructions": "Ovqatdan keyin ichish"
+    },
+    {
+      "medication": 4,
+      "dosage": "1 tabletka",
+      "frequency": "Kuniga 1 marta",
+      "duration": "10 kun",
+      "quantity": 10,
+      "instructions": "Ertalab ichish"
+    }
+  ]
+}
+
+Response:
+{
+  "id": 1,
+  "prescription_number": "RX-20240318-0001",
+  "barcode": "1234567890123",
+  "qr_code": "uuid-here",
+  "doctor_name": "Dr. Karimov Shavkat",
+  "patient_name": "Ali Valiyev",
+  "diagnosis": "Bronxit",
+  "status": "ACTIVE",
+  "valid_until": "2024-04-17",
+  "items": [
+    {
+      "medication": {
+        "name": "Paracetamol",
+        "strength": "500mg"
+      },
+      "dosage": "1 tabletka",
+      "frequency": "Kuniga 3 marta",
+      "duration": "5 kun",
+      "quantity": 15
+    }
+  ]
+}
+
+
+C) RETSEPTNI KO'RISH:
+
+GET http://127.0.0.1:8000/api/prescriptions/1/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+
+Response:
+{
+  "id": 1,
+  "prescription_number": "RX-20240318-0001",
+  "barcode": "1234567890123",
+  "qr_code": "uuid-here",
+  "barcode_image": "data:image/png;base64,...",  ← BASE64 RASM!
+  "qr_code_image": "data:image/png;base64,...",  ← BASE64 RASM!
+  "doctor_name": "Karimov Shavkat",
+  "doctor_specialization": "Terapevt",
+  "patient_name": "Ali Valiyev",
+  "diagnosis": "Bronxit",
+  "items": [...],
+  "status": "ACTIVE"
+}
+
+
+D) RETSEPTNI SKANERLASH (Apteka):
+
+POST http://127.0.0.1:8000/api/prescriptions/scan/
+Body:
+{
+  "barcode_or_qr": "1234567890123"
+}
+
+Response:
+{
+  "success": true,
+  "is_valid": true,
+  "prescription": {
+    "id": 1,
+    "prescription_number": "RX-20240318-0001",
+    "doctor_name": "Karimov Shavkat",
+    "patient_name": "Ali Valiyev",
+    "items": [
+      {
+        "medication": {
+          "name": "Paracetamol",
+          "strength": "500mg",
+          "form_display": "Tabletka"
+        },
+        "dosage": "1 tabletka",
+        "frequency": "Kuniga 3 marta",
+        "duration": "5 kun",
+        "quantity": 15,
+        "total_price": "75000.00"
+      }
+    ]
+  }
+}
+
+
+E) RETSEPTNI BERISH (Apteka):
+
+POST http://127.0.0.1:8000/api/prescriptions/dispense/
+Body:
+{
+  "barcode_or_qr": "1234567890123",
+  "pharmacist_name": "Aliyev Sardor",
+  "pharmacy_name": "Dorixona №1"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Retsept muvaffaqiyatli berildi!",
+  "prescription": {
+    "status": "DISPENSED",
+    "dispensed_at": "2024-03-18T15:30:00Z",
+    "dispensed_by": "Aliyev Sardor",
+    "pharmacy_name": "Dorixona №1"
+  }
+}
+
+
+F) PDF YUKLAB OLISH:
+
+GET http://127.0.0.1:8000/api/prescriptions/1/pdf/
+Headers:
+  Authorization: Bearer YOUR_TOKEN
+
+Response: PDF fayl yuklab olinadi
+
+
+📊 7. QANDAY ISHLAYDI:
+======================
+
+FLOW 1: DOKTOR RETSEPT YOZADI
+------------------------------
+1. Bemor doktorga keladi (Appointment)
+2. Doktor tashxis qo'yadi
+3. Doktor retsept yozadi:
+   - Tashxis yozadi
+   - Dorilar tanlaydi
+   - Dozalash ko'rsatadi
+   - Necha kun ichish kerakligini yozadi
+4. Sistema:
+   - Retsept raqami yaratadi (RX-20240318-0001)
+   - Barcode yaratadi (1234567890123)
+   - QR kod yaratadi (UUID)
+   - Yaroqlilik muddati (30 kun)
+5. Bemor retseptni oladi
+
+
+FLOW 2: BEMOR APTEKAGA BORADI
+------------------------------
+1. Bemor retsept bilan aptekaga keladi
+2. Aptekachi barcode/QR ni skanerlaydi
+3. Sistema:
+   - Retseptni topadi
+   - Yaroqliligini tekshiradi
+   - Dorilar ro'yxatini ko'rsatadi
+4. Aptekachi dorilarni beradi
+5. Sistema statusni "BERILGAN" qiladi
+
+
+💡 8. FRONTEND MISOL:
+=====================
+
+// 1. Retsept yaratish (Doktor)
+const createPrescription = async (data) => {
+  const response = await api.post('/api/prescriptions/create/', {
+    patient: patientId,
+    diagnosis: "Bronxit",
+    items: [
+      {
+        medication: 1,
+        dosage: "1 tabletka",
+        frequency: "Kuniga 3 marta",
+        duration: "5 kun",
+        quantity: 15
+      }
+    ]
+  });
+
+  return response.data;
+};
+
+// 2. Retseptni ko'rish (Bemor)
+const viewPrescription = async (id) => {
+  const response = await api.get(`/api/prescriptions/${id}/`);
+
+  // Barcode rasmini ko'rsatish
+  return `<img src="${response.data.barcode_image}" />`;
+};
+
+// 3. Skanerlash (Apteka)
+const scanPrescription = async (barcode) => {
+  const response = await api.post('/api/prescriptions/scan/', {
+    barcode_or_qr: barcode
+  });
+
+  if (response.data.success) {
+    console.log(response.data.prescription);
+  }
+};
+
+
+🎯 9. ASOSIY XUSUSIYATLAR:
+==========================
+
+✅ Doktor dori yozadi
+✅ Har bir dori uchun:
+   - Nomi
+   - Dozalash (1 tabletka, 5ml...)
+   - Necha marta (kuniga 3 marta)
+   - Davomiyligi (5 kun, 2 hafta)
+   - Miqdori (15 tabletka)
+   - Ko'rsatmalar (ovqatdan keyin)
+✅ Unique retsept raqami (RX-20240318-0001)
+✅ Barcode (13 raqamli EAN-13)
+✅ QR kod (UUID)
+✅ Yaroqlilik muddati (30 kun)
+✅ Apteka skanerlash
+✅ Status (Faol/Berilgan/Muddati o'tgan)
+✅ PDF yuklab olish
+
+
+🚨 10. MUHIM ESLATMALAR:
+=========================
+
+⚠️ Faqat doktor retsept yozishi mumkin
+⚠️ Har bir retsept unique raqamga ega
+⚠️ Barcode EAN-13 formatida (13 raqam)
+⚠️ QR kod UUID formatida
+⚠️ Yaroqlilik muddati 30 kun
+⚠️ Berilgan retseptni qayta bermaydi
+⚠️ Muddati o'tgan retseptni bermaydi
+
+
+═══════════════════════════════════════════════════════════════
+
+XULOSA:
+=======
+
+✅ Models: Medication, Prescription, PrescriptionItem
+✅ Barcode: EAN-13 (13 raqamli)
+✅ QR kod: UUID
+✅ PDF: ReportLab
+✅ Apteka: Scan va Dispense
+✅ Status tracking
+✅ Real tibbiy retsept!
+
+TAYYOR! Retsept tizimi ishga tushdi! 💊
+
+Keyingi:
+□ Frontend (React)
+□ Medical Records (ixtiyoriy)
+
+Omad! 🚀

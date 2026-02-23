@@ -1,0 +1,535 @@
+╔═══════════════════════════════════════════════════════════════╗
+║  POLIKLINIKA AUTH TIZIMI - ISHGA TUSHIRISH QO'LLANMASI      ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📋 QADAMLAR:
+
+1️⃣ FAYLLARNI JOYLASHTIRISH
+================================
+
+Yuklab olgan fayllarni quyidagi joylarga joylang:
+
+backend/
+├── config/
+│   ├── settings.py  ← config_settings.py
+│   └── urls.py      ← config_urls.py
+│
+└── apps/
+    └── accounts/
+        ├── models.py      ← accounts_models.py
+        ├── serializers.py ← accounts_serializers.py (yangi fayl)
+        ├── views.py       ← accounts_views.py
+        ├── urls.py        ← accounts_urls.py (yangi fayl)
+        ├── admin.py       ← accounts_admin.py
+        └── apps.py        ← accounts_apps.py
+
+
+2️⃣ TERMINALDA BUYRUQLAR
+================================
+
+# Virtual environment aktivlashtirish
+cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Database yaratish
+python manage.py makemigrations
+python manage.py migrate
+
+# Superuser yaratish (Doktor/Admin)
+python manage.py createsuperuser
+# Phone: +998901234567
+# Ism: Admin
+# Familiya: Doktor
+# Password: admin123
+
+# Serverni ishga tushirish
+python manage.py runserver
+
+
+3️⃣ TEST QILISH
+================================
+
+A) ADMIN PANEL (Doktor Dashboard):
+   URL: http://127.0.0.1:8000/admin/
+   Login: +998901234567
+   Password: admin123
+
+B) API ENDPOINTS:
+
+   1. Ro'yxatdan o'tish (Sign Up):
+      POST http://127.0.0.1:8000/api/auth/register/
+      Body (JSON):
+      {
+        "phone_number": "+998991234567",
+        "first_name": "Ali",
+        "last_name": "Valiyev",
+        "email": "ali@mail.uz",
+        "password": "test123456",
+        "password2": "test123456"
+      }
+
+   2. Kirish (Sign In):
+      POST http://127.0.0.1:8000/api/auth/login/
+      Body (JSON):
+      {
+        "phone_number": "+998991234567",
+        "password": "test123456"
+      }
+
+   3. Joriy user:
+      GET http://127.0.0.1:8000/api/auth/me/
+      Headers:
+      Authorization: Bearer YOUR_ACCESS_TOKEN
+
+   4. Chiqish:
+      POST http://127.0.0.1:8000/api/auth/logout/
+      Body (JSON):
+      {
+        "refresh": "YOUR_REFRESH_TOKEN"
+      }
+
+
+4️⃣ POSTMAN/THUNDER CLIENT BILAN TEST
+================================
+
+1. Yangi request yarating
+2. Method: POST
+3. URL: http://127.0.0.1:8000/api/auth/register/
+4. Body → raw → JSON
+5. Yuqoridagi JSON ni kiriting
+6. Send bosing
+
+
+5️⃣ MUHIM ESLATMALAR
+================================
+
+✅ Har kim sign up qila oladi
+✅ Sign up qilgan user avtomatik PATIENT bo'ladi
+✅ PATIENT userlar admin panelga kira olmaydi
+✅ Faqat superuser ADMIN panelga kiradi
+✅ Superuser create qilishda avtomatik ADMIN role beriladi
+✅ PatientProfile avtomatik yaratiladi
+
+
+6️⃣ KEYINGI QADAMLAR
+================================
+
+Auth tizimi tayyor! Endi qo'shishimiz kerak:
+
+□ Doktor dashboard (Frontend)
+□ Bemor dashboard (Frontend)
+□ Navbat tizimi (Backend + Frontend)
+□ Retsept tizimi (Backend + Frontend)
+□ AI yordamchi (Backend + Frontend)
+
+Tayyor bo'lganingizda keyingi qismni boshlaymiz!
+
+
+7️⃣ XATOLIKLAR VA YECHIMLAR
+================================
+
+Xato: "No module named 'apps'"
+Yechim: apps/__init__.py fayli borligini tekshiring
+
+Xato: "AUTH_USER_MODEL refers to model..."
+Yechim: Birinchi makemigrations, keyin migrate qiling
+
+Xato: "UNIQUE constraint failed"
+Yechim: Bu telefon raqam allaqachon ro'yxatdan o'tgan
+
+
+═══════════════════════════════════════════════════════════════
+
+# +++++++++++++ ADMIN(DOKTOR) PANEL UCHUN ALOHIDA +++++++++++++++++++
+
+
+╔═══════════════════════════════════════════════════════════════╗
+║  DASHBOARD API - O'RNATISH VA ISHLATISH                     ║
+╚═══════════════════════════════════════════════════════════════╝
+
+🎯 STRATEGIYA:
+==============
+
+BACKEND: Ma'lumotlarni hisoblaydi va API orqali beradi
+FRONTEND: Ma'lumotlarni olib, chiroyli ko'rsatadi
+
+SABAB:
+- Backend: Hisoblashlar, filtrlar, aggregatsiya
+- Frontend: Dizayn, animatsiya, interaktivlik
+
+
+📂 JOYLASH:
+===========
+
+Variant 1: Mavjud apps/accounts/views.py ga qo'shish
+Variant 2: Yangi apps/dashboard/ yaratish (tavsiya)
+
+
+🔧 VARIANT 2 (Yangi app) - TAVSIYA:
+====================================
+
+1. Yangi app yaratish:
+
+cd backend/apps
+python ../manage.py startapp dashboard
+cd dashboard
+rm tests.py models.py  # Kerak emas
+touch urls.py
+
+
+2. Fayllarni to'ldirish:
+
+FILE: apps/dashboard/__init__.py
+# Empty
+
+FILE: apps/dashboard/apps.py
+from django.apps import AppConfig
+
+class DashboardConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.dashboard'
+    verbose_name = 'Dashboard'
+
+
+FILE: apps/dashboard/views.py
+← dashboard_api.py kodini bu yerga ko'chiring
+
+
+FILE: apps/dashboard/urls.py
+from django.urls import path
+from .views import DoctorDashboardView, PatientDashboardView
+
+app_name = 'dashboard'
+
+urlpatterns = [
+    path('doctor/', DoctorDashboardView.as_view(), name='doctor'),
+    path('patient/', PatientDashboardView.as_view(), name='patient'),
+]
+
+
+3. settings.py:
+
+INSTALLED_APPS = [
+    # ...
+    'apps.dashboard',  # ← QO'SHING
+]
+
+
+4. config/urls.py:
+
+urlpatterns = [
+    # ...
+    path('api/dashboard/', include('apps.dashboard.urls')),  # ← QO'SHING
+]
+
+
+🧪 TEST:
+========
+
+A) DOKTOR DASHBOARD:
+
+GET http://127.0.0.1:8000/api/dashboard/doctor/
+Headers:
+  Authorization: Bearer DOCTOR_TOKEN
+
+Response:
+{
+  "doctor": {
+    "name": "Karimov Shavkat",
+    "specialization": "Tish xirurgi",
+    "room": "101",
+    "rating": 4.8
+  },
+  "today": {
+    "appointments": 12,
+    "completed": 8,
+    "prescriptions": 15
+  },
+  "upcoming_appointments": [
+    {
+      "id": 1,
+      "time": "10:00",
+      "patient_name": "Ali Valiyev",
+      "queue_number": 1,
+      "complaint": "Tish og'rig'i"
+    }
+  ],
+  "recent_prescriptions": [...],
+  "week_stats": [
+    {"date": "11.03", "day": "Du", "count": 5},
+    {"date": "12.03", "day": "Se", "count": 8},
+    ...
+  ]
+}
+
+
+B) BEMOR DASHBOARD:
+
+GET http://127.0.0.1:8000/api/dashboard/patient/
+Headers:
+  Authorization: Bearer PATIENT_TOKEN
+
+Response:
+{
+  "patient": {
+    "name": "Ali Valiyev",
+    "phone": "+998901234567"
+  },
+  "upcoming_appointments": [
+    {
+      "id": 1,
+      "doctor_name": "Dr. Karimov",
+      "date": "25.03.2024",
+      "time": "10:00",
+      "days_until": 2
+    }
+  ],
+  "recent_prescriptions": [...],
+  "stats": {
+    "total_appointments": 15,
+    "completed_appointments": 12
+  }
+}
+
+
+💻 FRONTEND (React) MISOL:
+===========================
+
+1. API SERVICE:
+
+// src/services/dashboardService.js
+import api from './api';
+
+export const getDoctorDashboard = async () => {
+  const response = await api.get('/api/dashboard/doctor/');
+  return response.data;
+};
+
+export const getPatientDashboard = async () => {
+  const response = await api.get('/api/dashboard/patient/');
+  return response.data;
+};
+
+
+2. DOKTOR DASHBOARD COMPONENT:
+
+// src/pages/DoctorDashboard.jsx
+import React, { useState, useEffect } from 'react';
+import { getDoctorDashboard } from '../services/dashboardService';
+
+const DoctorDashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const result = await getDoctorDashboard();
+      setData(result);
+    } catch (error) {
+      console.error('Dashboard error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div>Yuklanmoqda...</div>;
+
+  return (
+    <div className="dashboard">
+      {/* Header */}
+      <div className="header">
+        <h1>Salom, Dr. {data.doctor.name}</h1>
+        <p>{data.doctor.specialization}</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <StatCard
+          title="Bugungi navbatlar"
+          value={data.today.appointments}
+          icon="📅"
+          color="blue"
+        />
+        <StatCard
+          title="Yakunlandi"
+          value={data.today.completed}
+          icon="✅"
+          color="green"
+        />
+        <StatCard
+          title="Retseptlar"
+          value={data.today.prescriptions}
+          icon="💊"
+          color="purple"
+        />
+      </div>
+
+      {/* Upcoming Appointments */}
+      <div className="appointments-section">
+        <h2>Bugungi navbatlar</h2>
+        <div className="appointments-list">
+          {data.upcoming_appointments.map(apt => (
+            <AppointmentCard key={apt.id} appointment={apt} />
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Prescriptions */}
+      <div className="prescriptions-section">
+        <h2>Oxirgi retseptlar</h2>
+        <div className="prescriptions-list">
+          {data.recent_prescriptions.map(rx => (
+            <PrescriptionCard key={rx.id} prescription={rx} />
+          ))}
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="chart-section">
+        <h2>Haftalik statistika</h2>
+        <LineChart data={data.week_stats} />
+      </div>
+    </div>
+  );
+};
+
+
+3. STAT CARD COMPONENT:
+
+const StatCard = ({ title, value, icon, color }) => (
+  <div className={`stat-card stat-card-${color}`}>
+    <div className="stat-icon">{icon}</div>
+    <div className="stat-content">
+      <h3>{title}</h3>
+      <p className="stat-value">{value}</p>
+    </div>
+  </div>
+);
+
+
+4. APPOINTMENT CARD:
+
+const AppointmentCard = ({ appointment }) => (
+  <div className="appointment-card">
+    <div className="time">{appointment.time}</div>
+    <div className="info">
+      <h4>{appointment.patient_name}</h4>
+      <p>{appointment.complaint || 'Konsultatsiya'}</p>
+    </div>
+    <div className="queue">
+      <span className="badge">№{appointment.queue_number}</span>
+    </div>
+  </div>
+);
+
+
+📊 DASHBOARD ELEMENTLAR:
+=========================
+
+1. STAT CARDS (Statistika kartalari)
+   - Bugungi navbatlar
+   - Yakunlangan bemorlar
+   - Yozilgan retseptlar
+   - Umumiy bemorlar
+
+2. UPCOMING APPOINTMENTS (Kelgusi navbatlar)
+   - Vaqt
+   - Bemor ismi
+   - Shikoyat
+   - Navbat raqami
+
+3. RECENT PATIENTS (Oxirgi bemorlar)
+   - Bemor ismi
+   - Tashxis
+   - Sana
+   - Retsept
+
+4. RECENT PRESCRIPTIONS (Oxirgi retseptlar)
+   - Retsept raqami
+   - Bemor
+   - Tashxis
+   - Status
+
+5. CHARTS (Grafiklar)
+   - Haftalik bemorlar soni
+   - Oylik statistika
+   - Reyting
+
+
+🎨 CSS MISOL (Tailwind):
+=========================
+
+<div className="min-h-screen bg-gray-100">
+  {/* Header */}
+  <div className="bg-white shadow">
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <h1 className="text-3xl font-bold text-gray-900">
+        Salom, Dr. Karimov
+      </h1>
+      <p className="text-gray-600">Tish xirurgi</p>
+    </div>
+  </div>
+
+  {/* Stats Grid */}
+  <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-white p-6 rounded-lg shadow">
+        <div className="flex items-center">
+          <div className="text-4xl mr-4">📅</div>
+          <div>
+            <p className="text-gray-600">Bugungi navbatlar</p>
+            <p className="text-3xl font-bold text-blue-600">12</p>
+          </div>
+        </div>
+      </div>
+      {/* More cards... */}
+    </div>
+  </div>
+</div>
+
+
+🔄 REAL-TIME UPDATES (Bonus):
+==============================
+
+Frontend'da setInterval bilan yangilanadi:
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    fetchData(); // Har 30 soniyada yangilash
+  }, 30000);
+
+  return () => clearInterval(interval);
+}, []);
+
+
+📱 RESPONSIVE DESIGN:
+======================
+
+Mobile uchun:
+- Grid → Column
+- Cards → Full width
+- Chart → Scroll horizontal
+
+
+═══════════════════════════════════════════════════════════════
+
+XULOSA:
+=======
+
+✅ BACKEND: API tayyor (dashboard_api.py)
+✅ FRONTEND: React component misol
+✅ 2 ta endpoint: /doctor/ va /patient/
+✅ Real-time ma'lumotlar
+✅ Statistika, grafik, ro'yxatlar
+
+BACKEND ISHLAYDI ✅
+FRONTEND o'zingiz dizayn qilasiz! 🎨
+
+Keyingi qadam: Frontend yaratish yoki boshqa narsa? 😊
+
+
+

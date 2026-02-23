@@ -1,0 +1,289 @@
+╔═══════════════════════════════════════════════════════════════╗
+║  AI ASSISTANT - O'RNATISH VA ISHLATISH QO'LLANMASI          ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📂 FAYLLARNI JOYLASH:
+====================
+
+backend/apps/ai_assistant/
+├── __init__.py
+├── models.py       ← ai_models.py
+├── serializers.py  ← ai_serializers.py
+├── views.py        ← ai_views.py
+├── urls.py         ← ai_urls.py
+├── admin.py        ← ai_admin.py
+├── apps.py         ← ai_apps.py
+├── services.py     ← ai_services.py (ASOSIY!)
+├── prompts.py      ← ai_prompts.py
+├── rag.py          ← ai_rag.py
+└── selectors.py    ← ai_selectors.py (bo'sh)
+
+
+🔧 1. SETTINGS.PY GA QO'SHISH:
+==============================
+
+INSTALLED_APPS = [
+    # ...
+    'apps.ai_assistant',  # ← QO'SHING
+]
+
+# AI API kalit so'zlari
+OPENAI_API_KEY = 'your-openai-key-here'
+ANTHROPIC_API_KEY = 'your-anthropic-key-here'
+
+
+🔗 2. URLS.PY GA QO'SHISH:
+==========================
+
+# config/urls.py
+urlpatterns = [
+    # ...
+    path('api/ai/', include('apps.ai_assistant.urls')),  # ← QO'SHING
+]
+
+
+📦 3. KUTUBXONALAR O'RNATISH:
+=============================
+
+pip install openai==1.10.0
+# YOKI
+pip install anthropic==0.18.1
+
+# Ikkalasini ham o'rnatishingiz mumkin
+
+
+🗄️ 4. DATABASE MIGRATSIYA:
+===========================
+
+python manage.py makemigrations
+python manage.py migrate
+
+
+👨‍💼 5. ADMIN PANELGA TIBBIY MA'LUMOT QO'SHISH:
+=============================================
+
+1. Admin panelga kiring: http://127.0.0.1:8000/admin/
+2. "AI Yordamchi" > "Tibbiy bilimlar bazasi" > "Yangi qo'shish"
+
+MISOL MA'LUMOTLAR:
+
+Kategoriya: Kasallik
+Sarlavha: Qandli diabet
+Mazmun:
+  Qandli diabet - bu qondagi shakar miqdori yuqori bo'lgan kasallik.
+  Belgilari:
+  - Tez-tez chanqash
+  - Ko'p siydik chiqarish
+  - Holsizlik
+
+  Davolash:
+  - Dietaga rioya qilish
+  - Jismoniy faollik
+  - Insulin yoki tabletkalar
+
+  Ehtiyot chorasi:
+  - Qonni muntazam tekshirish
+  - Doktorga borib turish
+
+Kalit so'zlar: qandli diabet, shakar, insulin, glyukoza
+
+---
+
+Kategoriya: Alomat
+Sarlavha: Bosh og'rig'i
+Mazmun:
+  Bosh og'rig'i ko'p uchraydigan muammo. Turli sabablari bor:
+  - Stress
+  - Uyqusizlik
+  - Ko'z charchashi
+  - Qon bosimi
+
+  Yordam:
+  - Dam olish
+  - Ko'p suv ichish
+  - Tabletka (Paracetamol)
+
+  Qachon doktorga borish:
+  - 3 kundan ko'p davom etsa
+  - Juda kuchli bo'lsa
+  - Ko'rish buzilsa
+
+Kalit so'zlar: bosh og'rig'i, migren, stress, qon bosimi
+
+---
+
+MUHIM: Kamida 10-15 ta tibbiy ma'lumot qo'shing!
+
+
+🧪 6. TEST QILISH:
+==================
+
+A) POSTMAN / THUNDER CLIENT:
+
+1. Chat:
+   POST http://127.0.0.1:8000/api/ai/chat/
+   Headers:
+     Authorization: Bearer YOUR_ACCESS_TOKEN
+   Body (JSON):
+   {
+     "question": "Qandli diabet nima?",
+     "conversation_id": null
+   }
+
+2. Suhbatlar ro'yxati:
+   GET http://127.0.0.1:8000/api/ai/conversations/
+   Headers:
+     Authorization: Bearer YOUR_ACCESS_TOKEN
+
+3. Tibbiy bilimlar:
+   GET http://127.0.0.1:8000/api/ai/knowledge/
+   Headers:
+     Authorization: Bearer YOUR_ACCESS_TOKEN
+
+
+📊 7. QANDAY ISHLAYDI:
+======================
+
+┌─────────────┐
+│ Foydalanuvchi│
+│  Savol      │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────┐
+│  1. FAVQULODDA TEKSHIRUV        │
+│     (yurak og'rig'i = 103)      │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  2. RAG - BAZADAN MA'LUMOT      │
+│     - Tibbiy bilimlar           │
+│     - Doktorlar                 │
+│     - Bo'limlar                 │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  3. PROMPT YARATISH             │
+│     - System prompt             │
+│     - Bazadagi ma'lumotlar      │
+│     - Bemor ma'lumotlari        │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  4. AI API                      │
+│     - OpenAI (GPT-3.5/4)        │
+│     - Anthropic (Claude)        │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  5. JAVOB                       │
+│     - AI javobi                 │
+│     - Manbalar                  │
+│     - Suhbatga saqlash          │
+└─────────────────────────────────┘
+
+
+🔍 8. ASOSIY KOMPONENTLAR:
+==========================
+
+📄 MODELS.PY:
+  - AIConversation: Suhbat
+  - AIMessage: Xabar
+  - MedicalKnowledge: Tibbiy bilimlar bazasi
+
+📝 PROMPTS.PY:
+  - SYSTEM_PROMPT: AI ga yo'riqnoma
+  - get_rag_prompt(): RAG uchun
+  - get_clinic_info_prompt(): Klinika haqida
+  - get_medical_consultation_prompt(): Tibbiy maslahat
+  - is_emergency(): Favqulodda tekshirish
+
+🔎 RAG.PY:
+  - RAGRetriever.search_medical_knowledge(): Tibbiy ma'lumot qidirish
+  - RAGRetriever.search_departments(): Bo'limlar
+  - RAGRetriever.search_doctors(): Doktorlar
+  - RAGRetriever.get_context_for_question(): Barchasi
+  - PatientContextRetriever.get_patient_context(): Bemor ma'lumoti
+
+⚙️ SERVICES.PY (ENG MUHIM!):
+  - AIService: AI API bilan ishlash
+    * _call_openai()
+    * _call_anthropic()
+
+  - MedicalAIAssistant: Yuqori darajadagi interfeys
+    * chat(): Asosiy funksiya
+    * _get_or_create_conversation()
+    * _get_conversation_history()
+    * _save_message()
+
+  - ask_ai(): Oddiy interfeys funksiyasi
+
+
+💡 9. FOYDALANISH MISOLLARI:
+============================
+
+PYTHON CODE:
+from apps.ai_assistant.services import ask_ai
+
+# Oddiy savol
+response = ask_ai(request.user, "Qandli diabet nima?")
+print(response['response'])
+
+# Davom ettirish
+response2 = ask_ai(
+    request.user,
+    "Uni qanday oldini olish mumkin?",
+    conversation_id=response['conversation_id']
+)
+
+# Klinika haqida
+response3 = ask_ai(request.user, "Ko'z doktoringiz bormi?")
+
+# Favqulodda
+response4 = ask_ai(request.user, "Ko'krak og'rig'i bor!")
+# Bu avtomatik 103 ga yo'naltiradi
+
+
+🎯 10. MUHIM ESLATMALAR:
+========================
+
+✅ AI hech qachon tashxis qo'ymaydi
+✅ Har doim shifokorga murojaat qilishni aytadi
+✅ Favqulodda holatda 103 ga yo'naltiradi
+✅ Faqat bazadagi ma'lumotlarga tayanadi
+✅ Bemor ma'lumotlarini hisobga oladi
+✅ Barcha suhbat bazaga saqlanadi
+✅ Token hisobi bor (xarajat uchun)
+
+
+🚨 11. XAVFSIZLIK:
+==================
+
+⚠️ API kalitlarni .env faylida saqlang
+⚠️ Production'da DEBUG=False
+⚠️ Bemor ma'lumotlari maxfiy
+⚠️ Admin panelga faqat doktor kiradi
+
+
+📚 12. KEYINGI QADAMLAR:
+========================
+
+□ Frontend yaratish (React chat interface)
+□ Ko'proq tibbiy ma'lumot qo'shish
+□ Vector search (embedding) qo'shish
+□ Voice input qo'shish
+□ Multimodal (rasm yuklash) qo'shish
+
+
+═══════════════════════════════════════════════════════════════
+
+Tayyor! AI tizimi ishga tushdi! 🚀
+
+Savollar:
+- OpenAI yoki Anthropic?
+- Frontend kerakmi?
+- Boshqa biror narsa?
