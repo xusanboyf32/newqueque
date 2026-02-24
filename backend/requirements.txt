@@ -25,3 +25,6 @@ drf-yasg
 psycopg2-binary
 
 groq
+
+python-barcode[images]
+pillow
