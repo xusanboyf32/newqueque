@@ -117,10 +117,19 @@ def book_slot(*, user, slot_id):
     slot.status = SlotStatus.BOOKED
     slot.save(update_fields=["status", "updated_at"])
 
-    appointment = Appointment.objects.create(
-        user=user,
+    # appointment = Appointment.objects.create(
+    #     user=user,
+    #     slot=slot,
+    #     status=AppointmentStatus.BOOKED,
+    # )
+
+    # Eski bekor qilingan appointment bo'lsa yangilash, bo'lmasa yangi yaratish
+    appointment, created = Appointment.objects.update_or_create(
         slot=slot,
-        status=AppointmentStatus.BOOKED,
+        defaults={
+            'user': user,
+            'status': AppointmentStatus.BOOKED,
+        }
     )
     return appointment
 

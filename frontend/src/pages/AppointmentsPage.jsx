@@ -232,8 +232,14 @@ function BookingFlow({ onDone, onBack }) {
   const [submitting, setSubmit] = useState(false)
   const [err, setErr]           = useState(null)
   const [success, setSuccess]   = useState(null)
+  const [slotsRefreshKey, setSlotsRefreshKey] = useState(0)
 
-  const go = (n) => { setErr(null); setStep(n) }
+
+  const go = (n) => {
+      setErr(null)
+      if (n === 3) setSlotsRefreshKey(k => k + 1)
+      setStep(n)
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -269,7 +275,7 @@ function BookingFlow({ onDone, onBack }) {
       .then(d => setSlots(d.slots || []))
       .catch(() => setErr('Vaqtlar yuklanmadi'))
       .finally(() => setLoading(false))
-  }, [step, sel.doctor, sel.day])
+  }, [step, sel.doctor, sel.day, slotsRefreshKey])
 
   const submit = async () => {
     if (!sel.slot) return

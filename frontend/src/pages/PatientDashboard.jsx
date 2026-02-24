@@ -29,7 +29,6 @@ export default function PatientDashboard() {
 
   const quickActions = [
     { icon: '📅', label: 'Navbat olish',  action: () => setShowBooking(true), color: '#00c8aa' },
-    { icon: '🏥', label: "Bo'limlar",     path: '/departments',   color: '#5282ff' },
     { icon: '✨', label: 'AI Yordamchi',  path: '/ai',            color: '#a855f7' },
     { icon: '📋', label: 'Tibbiy Daftar', path: '/daftar',        color: '#f59e0b' },
     { icon: '💊', label: 'Retseptlar',    path: '/prescriptions', color: '#10b981' },
