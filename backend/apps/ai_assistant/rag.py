@@ -1,8 +1,44 @@
 """
-RAG Sistema - tuzatilgan versiya
+RAG Sistema - O'zbek tiliga moslashtirilgan versiya
 """
 from django.db.models import Q
 from typing import List, Dict, Any
+
+
+# O'zbek tilida so'z qo'shimchalari
+UZ_SUFFIXES = [
+    'yabdi', 'yapti', 'ayabdi', 'moqda', 'abdi', 'yotir',
+    'imiz', 'ingiz', 'larni', 'lardan', 'larga', 'lardan',
+    'dagi', 'ning', 'dan', 'lar', 'lari', 'ga', 'da', 'ni',
+    'im', 'ing', 'di', 'adi', 'ydi',
+]
+
+def uz_stem(word: str) -> str:
+    """tishim -> tish, og'riyabdi -> og'ri"""
+    word = word.lower().strip()
+    for suffix in sorted(UZ_SUFFIXES, key=len, reverse=True):
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            return word[:-len(suffix)]
+    return word
+
+
+def get_search_variants(query: str) -> List[str]:
+    """
+    'tishim og'riyabdi' -> ['tishim', 'og'riyabdi', 'tish', 'og'ri', 'tis', 'og'r']
+    """
+    words = query.lower().split()
+    variants = set()
+    for word in words:
+        if len(word) < 2:
+            continue
+        variants.add(word)           # to'liq so'z
+        stem = uz_stem(word)
+        variants.add(stem)           # ildiz
+        if len(stem) >= 4:
+            variants.add(stem[:4])   # birinchi 4 harf
+        if len(stem) >= 3:
+            variants.add(stem[:3])   # birinchi 3 harf
+    return list(variants)
 
 
 class RAGRetriever:
@@ -10,13 +46,19 @@ class RAGRetriever:
     @staticmethod
     def search_medical_knowledge(query: str, limit: int = 3) -> List[Dict[str, Any]]:
         from .models import MedicalKnowledge
-        keywords = query.lower().split()
+        variants = get_search_variants(query)
         q_objects = Q()
-        for keyword in keywords:
-            q_objects |= Q(title__icontains=keyword)
-            q_objects |= Q(content__icontains=keyword)
-            q_objects |= Q(keywords__icontains=keyword)
-        results = MedicalKnowledge.objects.filter(q_objects, is_active=True).distinct()[:limit]
+        for variant in variants:
+            if len(variant) < 3:
+                continue
+            q_objects |= Q(title__icontains=variant)
+            q_objects |= Q(content__icontains=variant)
+            q_objects |= Q(keywords__icontains=variant)
+
+        results = MedicalKnowledge.objects.filter(
+            q_objects, is_active=True
+        ).distinct()[:limit]
+
         return [
             {
                 'title': item.title,
@@ -29,7 +71,6 @@ class RAGRetriever:
 
     @staticmethod
     def search_departments(query: str = None) -> List[Dict[str, Any]]:
-        # departments app yo'q — bo'sh qaytaradi
         return []
 
     @staticmethod
@@ -38,12 +79,15 @@ class RAGRetriever:
             from apps.navbat.models import Doctor
             doctors = Doctor.objects.filter(is_active=True)
             if query:
-                keywords = query.lower().split()
+                variants = get_search_variants(query)
                 q_objects = Q()
-                for keyword in keywords:
-                    q_objects |= Q(full_name__icontains=keyword)
-                    q_objects |= Q(specialty__name__icontains=keyword)
+                for variant in variants:
+                    if len(variant) < 3:
+                        continue
+                    q_objects |= Q(full_name__icontains=variant)
+                    q_objects |= Q(specialty__name__icontains=variant)
                 doctors = doctors.filter(q_objects)
+
             result = []
             for d in doctors[:5]:
                 result.append({
@@ -65,10 +109,18 @@ class RAGRetriever:
             'doctors': [],
             'has_context': False
         }
+
+        # Har doim tibbiy ma'lumot qidiradi
         context['medical'] = RAGRetriever.search_medical_knowledge(question)
-        doctor_keywords = ['doktor', 'shifokor', 'vrach', 'doctor', 'mutaxassis']
-        if any(kw in question_lower for kw in doctor_keywords):
+
+        # Shifokor so'ralsa yoki tibbiy ma'lumot topilmasa — doktorlarni ham qidiradi
+        doctor_keywords = [
+            'doktor', 'shifokor', 'vrach', 'doctor', 'mutaxassis',
+            'kim', 'qaysi', 'bormi', 'kimga', 'qayerda'
+        ]
+        if any(kw in question_lower for kw in doctor_keywords) or not context['medical']:
             context['doctors'] = RAGRetriever.search_doctors(question)
+
         context['has_context'] = bool(context['medical'] or context['doctors'])
         return context
 
