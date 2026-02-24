@@ -17,6 +17,10 @@ class Specialty(TimeStampMixin, SlugMixin):
     name = models.CharField(max_length=120, unique=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        verbose_name = "Mutaxassislik"
+        verbose_name_plural = "Mutaxassisliklar"
+
     def __str__(self):
         return self.name
 
@@ -33,6 +37,10 @@ class Doctor(TimeStampMixin, SlugMixin):
 
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        verbose_name = "Shifokor"
+        verbose_name_plural = "Shifokorlar"
+
     def __str__(self):
         return f"{self.full_name} ({self.specialty.name})"
 
@@ -47,6 +55,10 @@ class DoctorSchedule(TimeStampMixin):
     work_end = models.TimeField(default=time(18, 0))
     slot_minutes = models.PositiveSmallIntegerField(default=15)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Ish jadvali"
+        verbose_name_plural = "Ish jadvallari"
 
     def __str__(self):
         return f"{self.doctor.full_name}: {self.work_start}-{self.work_end}"
@@ -71,6 +83,8 @@ class AppointmentSlot(TimeStampMixin):
     status = models.CharField(max_length=10, choices=SlotStatus.choices, default=SlotStatus.FREE)
 
     class Meta:
+        verbose_name = "Qabul vaqti"
+        verbose_name_plural = "Qabul vaqtlari"
         constraints = [
             models.UniqueConstraint(fields=["doctor", "date", "start_time"], name="uniq_doctor_slot"),
         ]
@@ -97,6 +111,10 @@ class Appointment(TimeStampMixin):
     slot = models.OneToOneField(AppointmentSlot, on_delete=models.PROTECT, related_name="appointment")
 
     status = models.CharField(max_length=10, choices=AppointmentStatus.choices, default=AppointmentStatus.BOOKED)
+
+    class Meta:
+        verbose_name = "Navbat"
+        verbose_name_plural = "Navbatlar"
 
     def __str__(self):
         return f"{self.user_id} -> {self.slot} ({self.status})"
