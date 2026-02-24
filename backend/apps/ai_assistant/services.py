@@ -245,7 +245,7 @@ class MedicalAIAssistant:
                 question, rag_context['departments'], rag_context['doctors']
             )
         elif rag_context['medical'] or patient_info:
-            final_prompt = get_medical_consultation_prompt(question, patient_info)
+            final_prompt = get_medical_consultation_prompt(question, patient_info, rag_context['medical'])
         else:
             from .prompts import SYSTEM_PROMPT
             final_prompt = (

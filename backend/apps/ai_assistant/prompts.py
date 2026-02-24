@@ -113,19 +113,8 @@ Yuqoridagi ma'lumotlar asosida to'liq va aniq javob ber.
 Agar so'ralgan doktor bo'lmasa, o'xshash mutaxassis tavsiya qil.
 """
 
-
-def get_medical_consultation_prompt(question: str, patient_info: dict = None) -> str:
-    """
-    Tibbiy maslahat uchun prompt
-
-    Args:
-        question: Tibbiy savol
-        patient_info: Bemor ma'lumotlari (ixtiyoriy)
-
-    Returns:
-        Formatted prompt
-    """
-
+# YANGI (medical_data parametri qo'shildi):
+def get_medical_consultation_prompt(question: str, patient_info: dict = None, medical_data: list = None) -> str:
     patient_context = ""
     if patient_info:
         patient_context = f"""
@@ -135,24 +124,28 @@ def get_medical_consultation_prompt(question: str, patient_info: dict = None) ->
 - Surunkali kasalliklar: {patient_info.get('chronic_diseases', 'yoq')}
 - Allergiya: {patient_info.get('allergies', 'yoq')}
 """
+    medical_context = ""
+    if medical_data:
+        medical_context = "\n📚 BAZADAGI TIBBIY MA'LUMOTLAR:\n"
+        for item in medical_data:
+            medical_context += f"- {item['title']}: {item['content']}\n"
 
     return f"""
 {SYSTEM_PROMPT}
-
 {patient_context}
+{medical_context}
 
 ❓ TIBBIY SAVOL:
 {question}
 
 ⚕️ JAVOB BERISH TARTIBI:
-1. Qisqa va aniq javob ber
-2. Ehtiyotkor bo'l - tashxis qo'yma
+1. Bazadagi ma'lumotlardan foydalanib aniq javob ber
+2. Tashxis qo'yma
 3. Qachon shifokorga borishni ayt
 4. Favqulodda belgilarni ta'kidla
 
 Eslatma: Bu faqat umumiy ma'lumot, aniq tashxis uchun shifokorga boring!
 """
-
 
 # Umumiy javoblar (RAG ma'lumot topilmaganda)
 FALLBACK_RESPONSES = {
@@ -218,10 +211,6 @@ def is_emergency(question: str) -> bool:
 
 
 def is_greeting(question: str) -> bool:
-    """
-    Salomlashish ekanligini tekshirish
-    """
     greetings = ['assalom', 'salom', 'hello', 'hi', 'привет', 'здравствуй']
-    question_lower = question.lower()
-    return any(greet in question_lower for greet in greetings)
-
+    q = question.lower().strip()
+    return any(q == g or q.startswith(g + ' ') for g in greetings) and len(q) < 25
