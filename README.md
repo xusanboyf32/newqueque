@@ -163,8 +163,8 @@ Haqiqiy bemorlar va doktorlar uchun ishlab chiqilgan va test qilingan
 
 **[Sizning Ismingiz]**
 
-GitHub: [github.com/username]  
-Email: your.email@example.com  
+GitHub: xusanboyf32  
+Email: inomov4084@gmail.com  
 LinkedIn: [linkedin.com/in/username]
 
 ---
